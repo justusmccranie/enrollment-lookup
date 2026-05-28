@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: enrollment-lookup
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: GHL_API_KEY
+        sync: false
