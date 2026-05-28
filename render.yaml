@@ -2,7 +2,6 @@ services:
   - type: web
     name: enrollment-lookup
     runtime: node
-    plan: free
     buildCommand: npm install
     startCommand: node server.js
     envVars:
