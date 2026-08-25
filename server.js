@@ -26,51 +26,53 @@ app.post('/lookup', async (req, res) => {
   }
 
   try {
-    const params = new URLSearchParams({
-      locationId: LOCATION_ID,
-      limit: '100',
-    });
-    params.set(`customField[${STUDENT_ID_FIELD_ID}]`, student_id);
-
     const ghlRes = await fetchWithTimeout(
-      `https://services.leadconnectorhq.com/contacts/?${params}`,
+      'https://services.leadconnectorhq.com/contacts/search',
       {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${GHL_API_KEY}`,
           'Version': '2021-07-28',
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          locationId: LOCATION_ID,
+          page: 1,
+          pageLimit: 1,
+          filters: [
+            {
+              group: 'AND',
+              filters: [
+                {
+                  field: 'customField.student_id',
+                  operator: 'eq',
+                  value: student_id,
+                },
+              ],
+            },
+          ],
+        }),
       }
     );
 
     const data = await ghlRes.json();
-    console.log(`customField filter response status: ${ghlRes.status}, contacts: ${(data.contacts ?? []).length}, total: ${data.meta?.total}`);
+    console.log(`Search status: ${ghlRes.status}, contacts: ${(data.contacts ?? []).length}`);
 
     if (!ghlRes.ok) {
-      console.error('GHL API error:', JSON.stringify(data));
+      console.error('GHL search error:', JSON.stringify(data));
       return res.status(502).json({ error: 'GHL API error', detail: data });
     }
 
     const contacts = data.contacts ?? [];
 
-    // GHL may ignore the custom field filter and return all contacts;
-    // verify the match explicitly.
-    const match = contacts.find(c =>
-      (c.customFields ?? []).some(f => f.id === STUDENT_ID_FIELD_ID && f.value === student_id)
-    );
-
-    if (match) {
+    if (contacts.length > 0) {
+      const match = contacts[0];
       const fullName = [match.firstName, match.lastName].filter(Boolean).join(' ');
       return res.json({
         found: true,
         name: fullName || match.email || 'Unknown',
         student_id,
       });
-    }
-
-    // If total > 100, the filter wasn't applied and we can't reliably scan.
-    if ((data.meta?.total ?? 0) > 100) {
-      console.error(`customField filter ignored by GHL — total contacts: ${data.meta.total}`);
-      return res.status(501).json({ error: 'GHL does not support custom field filtering on this endpoint' });
     }
 
     return res.json({ found: false });
