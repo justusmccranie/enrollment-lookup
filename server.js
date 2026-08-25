@@ -41,7 +41,7 @@ app.post('/lookup', async (req, res) => {
           pageLimit: 1,
           filters: [
             {
-              field: `customField.${STUDENT_ID_FIELD_ID}`,
+              field: 'contact.student_id',
               operator: 'eq',
               value: student_id,
             },
