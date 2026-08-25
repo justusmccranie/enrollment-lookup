@@ -42,7 +42,7 @@ app.post('/lookup', async (req, res) => {
           filters: [
             {
               field: `customField.${STUDENT_ID_FIELD_ID}`,
-              operator: '=',
+              operator: 'eq',
               value: student_id,
             },
           ],
